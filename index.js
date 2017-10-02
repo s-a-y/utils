@@ -1,7 +1,7 @@
 'use strict';
 
 module.exports = {
-    Poloniex: require('./src/poloniex'),
-    Stellar: require('./src/stellar'),
+    Poloniex: require('./src/Poloniex'),
+    Stellar: require('./src/Stellar'),
     KvStorage: require('./src/KvStorage'),
 };

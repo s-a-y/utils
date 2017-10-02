@@ -16,6 +16,7 @@ class Stellar {
         this.config = config;
         this.logger = logger;
         this.server = new StellarSdk.Server(config.horizonUrl);
+        this.sdk = StellarSdk;
     }
 
     streamEffects ({account, cursorStorage, messageHandler, streamFromCursor, errorHandler = (error) => this.logger.error("ERROR: effects stream returns error", {error})}) {
