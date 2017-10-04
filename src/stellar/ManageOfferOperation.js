@@ -9,6 +9,8 @@ class ManageOfferOperation {
                     buyingAssetCode,
                     buyingAssetIssuer,
                     amount,
+                    price,
+                    offerId,
                 }) {
         this.sellingAssetType = sellingAssetType;
         this.sellingAssetCode = sellingAssetCode;
@@ -17,6 +19,8 @@ class ManageOfferOperation {
         this.buyingAssetCode = buyingAssetCode;
         this.buyingAssetIssuer = buyingAssetIssuer;
         this.amount = amount;
+        this.price = price;
+        this.offerId = offerId;
     }
 }
 

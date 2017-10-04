@@ -4,7 +4,6 @@ const PaymentOperation = require('./stellar/PaymentOperation');
 const ManageOfferOperation = require('./stellar/ManageOfferOperation');
 const StellarSdk = require('stellar-sdk');
 
-
 class Stellar {
     constructor ({config, logger}) {
         if (config.env === 'development') {
@@ -72,7 +71,37 @@ class Stellar {
     }
 
     getOffersForAccount (accountId) {
-        return this.server.offers('accounts', accountId).call();
+        return this.server.offers('accounts', accountId).call()
+            .then((result) => {
+                return result.records.map((v) => {
+                    return {
+                        offerId: v.id,
+                        account: v.seller,
+                        sellingAssetType: v.selling.asset_type,
+                        sellingAssetCode: v.selling.asset_code,
+                        sellingAssetIssuer: v.selling.asset_issuer,
+                        buyingAssetType: v.buying.asset_type,
+                        buyingAssetCode: v.buying.asset_code,
+                        buyingAssetIssuer: v.buying.asset_issuer,
+                        amount: v.amount,
+                        price: v.price
+                    }
+                });
+            });
+    }
+
+    dropOffersForAccount({account, accountSecret}) {
+        return this.getOffersForAccount(account)
+            .then((offers) => {
+                const operations = offers.map((v) => {
+                    v.amount = 0;
+                    return this.newManageOfferOperation(v);
+                });
+
+                return operations.length
+                    ? this.processTransaction({account, accountSecret}, operations)
+                    : Promise.resolve();
+            });
     }
 
     manageOffers (args) {
@@ -85,11 +114,11 @@ class Stellar {
     }
 
     processTransaction ({account, accountSecret, memo, memoType}, ops) {
-        this.logger.debug('processTransaction()', {context: { args: [{account, accountSecret, memo, memoType}, ops]}});
-        this.logger.debug('stellar', { context: { network: StellarSdk.Network.current(), server: this.server }});
+        this.logger.debug('processTransaction()', {context: {args: [{account, accountSecret, memo, memoType}, ops]}});
+
         return this.server.loadAccount(account)
             .then(accountObject => {
-                this.logger.debug('loadAccount', { context: { account: accountObject }});
+                this.logger.debug('loadAccount', {context: {account: JSON.parse(JSON.stringify(accountObject))}});
                 const builder = new StellarSdk.TransactionBuilder(accountObject);
                 ops.forEach(operation => builder.addOperation(this.operationToStellarObject(operation)));
 
@@ -140,8 +169,11 @@ class Stellar {
                             : new StellarSdk.Asset(operation.buyingAssetCode, operation.buyingAssetIssuer),
                     amount: operation.amount.toString(),
                     price: operation.price,
-                    offerId: operation.id
+                    offerId: operation.offerId,
                 });
+            default:
+                this.logger.error('Bad operation object', operation);
+                return Promise.reject(new Error('Bad operation object'));
         }
     }
 }
