@@ -35,7 +35,7 @@ class Poloniex {
                 this.logger.debug('orderbook', { context: { orderbook: result }});
                 const rate = ((parseFloat(result.asks[0][0]) + parseFloat(result.bids[0][0])) / 2).toFixed(8);
                 this.logger.info(`...current Poloniex rate is '${rate}'.`);
-                return rate;
+                return parseFloat(rate);
             })
             .catch((error) => {
                 this.logger.error('ERROR: Cannot resole Poloniex rate', {error});

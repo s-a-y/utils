@@ -25,8 +25,11 @@ class Stellar {
             .then((value) => {
                 this.logger.info(`...stored cursor available: ${value}`);
                 this.logger.info('Waiting for new message..');
-                const close = this.server.effects()
-                    .forAccount(account)
+                const stream = this.server.effects();
+                if (account) {
+                    stream.forAccount(account);
+                }
+                const close = stream
                     .cursor(streamFromCursor ? streamFromCursor : (value ? value : 'now'))
                     .stream({
                         onmessage: (message) => {
@@ -106,7 +109,8 @@ class Stellar {
 
     manageOffers (args) {
         this.logger.debug('manageOffers', {context: {args: [args]}});
-        return this.processTransaction(args, args.offers)
+        const offers = args.offers.map(v => this.newManageOfferOperation(v));
+        return this.processTransaction(args, offers)
             .catch((error) => {
                 this.logger.error('ERROR: manageOffers()', {error, context: {args}});
                 throw error;
