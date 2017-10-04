@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/s-a-y/utils#readme",
   "dependencies": {
+    "async": "^2.5.0",
     "bluebird": "^3.5.0",
     "dotenv": "^4.0.0",
     "nonce": "^1.0.4",
