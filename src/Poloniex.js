@@ -28,10 +28,11 @@ class Poloniex {
         });
     }
 
-    resolveRate(currencyPair = 'BTC_STR') {
+    getRate(currencyPair = 'BTC_STR') {
         this.logger.info('Resolving Poloniex rate...');
         return this.returnOrderBook(currencyPair)
             .then((result) => {
+                this.logger.info('...orderbook received...');
                 this.logger.debug('orderbook', { context: { orderbook: result }});
                 const rate = ((parseFloat(result.asks[0][0]) + parseFloat(result.bids[0][0])) / 2).toFixed(8);
                 this.logger.info(`...current Poloniex rate is '${rate}'.`);
