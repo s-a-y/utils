@@ -18,35 +18,49 @@ class Stellar {
         this.sdk = StellarSdk;
     }
 
-    streamEffects ({account, cursorStorage, messageHandler, streamFromCursor, errorHandler = (error) => this.logger.error("ERROR: effects stream returns error", {error})}) {
+    streamEffects({account, cursorStorage, messageHandler, streamFromCursor, errorHandler = (error) => this.logger.error("ERROR: effects stream returns error", {error})}) {
         this.logger.info('Initializing effects streaming...');
+        return this.streamResources(
+            {
+                builder: this.server.effects(),
+            }, arguments[0]
+        );
+    }
+
+    streamTransactions({account, cursorStorage, messageHandler, streamFromCursor, errorHandler = (error) => this.logger.error("ERROR: effects stream returns error", {error})}) {
+        this.logger.info('Initializing transactions streaming...');
+        return this.streamResources(
+            {
+                builder: this.server.transactions(),
+            }, arguments[0]
+        );
+    }
+
+    streamResources ({builder}, {account, cursorStorage, messageHandler = () => {}, streamFromCursor, errorHandler = (error) => this.logger.error("ERROR: stream returns error", {error})}) {
         this.logger.info('Calling cursor storage..');
         return cursorStorage.get()
             .then((value) => {
                 this.logger.info(`...stored cursor available: ${value}`);
                 this.logger.info('Waiting for new message..');
-                const stream = this.server.effects();
                 if (account) {
-                    stream.forAccount(account);
+                    builder.forAccount(account);
                 }
-                const close = stream
+                const close = builder
                     .cursor(streamFromCursor ? streamFromCursor : (value ? value : 'now'))
                     .stream({
                         onmessage: (message) => {
                             this.logger.info('..new message received');
-                            this.logger.info('Processing new message...');
                             messageHandler({message, cursorStorage, close});
-                            this.logger.info('...message processed');
                         },
                         onerror: (event) => {
-                            this.logger.error('offers stream return error event', {
+                            this.logger.error('Stream return error event', {
                                 context: {
                                     event,
                                     account,
                                     cursor: value
                                 }
                             });
-                            errorHandler(new Error('Stellar effects stream returns error event'));
+                            errorHandler(new Error('Stellar stream returns error event'));
                         }
                     });
                 return close;
