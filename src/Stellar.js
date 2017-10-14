@@ -36,7 +36,7 @@ class Stellar {
         );
     }
 
-    streamResources ({builder}, {account, cursorStorage, messageHandler = () => {}, streamFromCursor, errorHandler = (error) => this.logger.error("ERROR: stream returns error", {error})}) {
+    streamResources ({builder}, {account, cursorStorage, messageHandler = () => {}, streamFromCursor, errorHandler = (error) => this.logger.error("Stellar stream returns error", {error})}) {
         this.logger.info('Calling cursor storage..');
         return cursorStorage.get()
             .then((value) => {
@@ -53,14 +53,16 @@ class Stellar {
                             messageHandler({message, cursorStorage, close});
                         },
                         onerror: (event) => {
-                            this.logger.error('Stream return error event', {
+                            this.logger.error('Stream returns error event', {
                                 context: {
                                     event,
                                     account,
                                     cursor: value
                                 }
                             });
-                            errorHandler(new Error('Stellar stream returns error event'));
+                            const error = new Error('Stellar stream returns error event');
+                            error.event = event;
+                            errorHandler(error);
                         }
                     });
                 return close;
