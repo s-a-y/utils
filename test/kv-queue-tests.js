@@ -22,9 +22,9 @@ describe.only('KvQueue tests', function () {
     describe('KvQueue', () => {
         it('publish/consume', (done) => {
             const msg = `Test!!! ${Date.now()}`;
-            q.publishTask({type: "test-type", object: msg})
+            q.publish({type: "test-type", object: msg})
                 .then(() => {
-                    return q.popTasks();
+                    return q.consume();
                 })
                 .then((tasks) => {
                     const task = tasks.pop();

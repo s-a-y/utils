@@ -3,40 +3,45 @@
 const async = require('async');
 
 class KvQueue {
-    constructor ({config, logger, kv}) {
+    constructor ({config = {}, logger, kv}) {
         this.key = config.key;
+        this.prefix = config.prefix || '';
         this.kv = kv;
         this.logger = logger;
     }
-    publishTask ({type, object = null}) {
-        return this.kv.lpush(this.key, {type, object});
+
+    queue(queue) {
+        this.key = queue;
+        return this;
     }
 
-    popTasks (length = 10) {
-        const tasksRead = [];
-        const consumeTask = (callback) => {
-            this.kv.rpop(this.key).then((value) => {
-                tasksRead.unshift(value);
-                callback(null, value)
-            });
-        };
+    publish (message) {
+        if (!this.key) {
+            throw new Error('queue undefined');
+        }
+        return this.kv.lpush(this.addPrefix(this.key), message);
+    }
 
+    consume (length = 10) {
+        if (!this.key) {
+            throw new Error('queue undefined');
+        }
         return new Promise((resolve, reject) => {
-            async.parallelLimit(
-                new Array(length).fill(consumeTask),
-                3,
-                (error, results) => {
-                    if (error) {
-                        this.logger.error('Queue: Failed to read tasks from queue. Unhandled tasks:', tasksRead);
-                        reject(error);
-                    } else {
-                        results = results.filter(a => a);
-                        this.logger.debug('New tasks received', results);
-                        resolve(results.filter(a => a));
-                    }
+            this.kv.client.multi(
+                new Array(length).fill(['rpop', this.kv.addPrefix(this.addPrefix(this.key))])
+            ).exec((error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    this.logger.debug('New tasks received', results);
+                    resolve(results.filter(a => a).map(a => JSON.parse(a)));
                 }
-            );
+            });
         });
+    }
+
+    addPrefix (key) {
+        return `${this.prefix}${key}`;
     }
 }
 
