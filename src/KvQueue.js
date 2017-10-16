@@ -33,8 +33,9 @@ class KvQueue {
                 if (error) {
                     reject(error);
                 } else {
-                    this.logger.debug('New tasks received', results);
-                    resolve(results.filter(a => a).map(a => JSON.parse(a)));
+                    const tasks = results.filter(a => a).map(a => JSON.parse(a));
+                    if (tasks.length) this.logger.debug('New tasks received', {tasks});
+                    resolve(tasks);
                 }
             });
         });

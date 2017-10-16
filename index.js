@@ -1,9 +1,11 @@
 'use strict';
 
 module.exports = {
+    Bittrex: require('./src/Bittrex'),
     KvQueue: require('./src/KvQueue'),
     KvStorage: require('./src/KvStorage'),
     Poloniex: require('./src/Poloniex'),
-    Bittrex: require('./src/Bittrex'),
+    RateResolver: require('./src/RateResolver'),
     Stellar: require('./src/Stellar'),
+    HighlandHelpers: require('./src/HighlandHelpers'),
 };

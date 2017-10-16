@@ -1,20 +1,26 @@
 'use strict';
-const bluebird = require('bluebird');
-const redis = require('redis');
-
-bluebird.promisifyAll(redis.RedisClient.prototype);
-
 const MODE_ASYNC = 'async';
 const MODE_SYNC = 'sync';
 
 class KvStorage {
-    constructor ({config, logger}) {
-        this.client = redis.createClient();
+    constructor ({config, logger, client}) {
+        this.config = config;
+        this.client = client;
         this.logger = logger;
         this.mode = config.mode || MODE_ASYNC;
         this.prefix = config.env + ':';
         this.client.on('error', function (error) {
             this.logger.error('KvStorage', error);
+        });
+    }
+
+    duplicate (opts) {
+        const config = Object.assign(this.config, opts);
+
+        return new KvStorage({
+            config,
+            logger: this.logger,
+            client: this.client.duplicate(),
         });
     }
 
@@ -34,7 +40,7 @@ class KvStorage {
         if (this.mode === MODE_ASYNC) {
             return this.client.hgetAsync(this.addPrefix(key), field)
                 .then(value => {
-                    this.decodeValue(value, defaultValue);
+                    return this.decodeValue(value, defaultValue);
                 });
         } else {
             return this.decodeValue(this.client.hget(this.addPrefix(key), field), defaultValue);
@@ -42,16 +48,15 @@ class KvStorage {
     }
 
     hset (key, field, value) {
-        return this.mode === MODE_ASYNC
-            ? this.client.hsetAsync(this.addPrefix(key), field, JSON.stringify(value))
-            : this.client.hset(this.addPrefix(key), field, JSON.stringify(value));
+        const method = this.mode === MODE_ASYNC ? 'hsetAsync' : 'hset';
+        return this.client[method](this.addPrefix(key), field, JSON.stringify(value));
     }
 
     get (key, defaultValue = null) {
         if (this.mode === MODE_ASYNC) {
             return this.client.getAsync(this.addPrefix(key))
                 .then(value => {
-                    this.decodeValue(value, defaultValue);
+                    return this.decodeValue(value, defaultValue);
                 });
         } else {
             return this.decodeValue(this.client.get(this.addPrefix(key)), defaultValue);
@@ -59,28 +64,25 @@ class KvStorage {
     }
 
     set (key, value) {
-        return this.mode === MODE_ASYNC
-            ? this.client.setAsync(this.addPrefix(key), JSON.stringify(value))
-            : this.client.set(this.addPrefix(key), JSON.stringify(value));
+        const method = this.mode === MODE_ASYNC ? 'setAsync' : 'set';
+        return this.client[method](this.addPrefix(key), JSON.stringify(value));
     }
 
     sadd (key, value) {
-        return this.mode === MODE_ASYNC
-            ? this.client.saddAsync(this.addPrefix(key), value)
-            : this.client.sadd(this.addPrefix(key), value);
+        const method = this.mode === MODE_ASYNC ? 'saddAsync' : 'sadd';
+        return this.client[method](this.addPrefix(key), value);
     }
 
     lpush(key, value) {
-        return this.mode === MODE_ASYNC
-            ? this.client.lpushAsync(this.addPrefix(key), JSON.stringify(value))
-            : this.client.lpush(this.addPrefix(key), JSON.stringify(value));
+        const method = this.mode === MODE_ASYNC ? 'lpushAsync' : 'lpush';
+        return this.client[method](this.addPrefix(key), JSON.stringify(value))
     }
 
     rpop(key, defaultValue = null) {
         if (this.mode === MODE_ASYNC) {
             return this.client.rpopAsync(this.addPrefix(key))
                 .then(value => {
-                    this.decodeValue(value, defaultValue);
+                    return this.decodeValue(value, defaultValue);
                 });
         } else {
             return this.decodeValue(this.client.rpop(this.addPrefix(key)), defaultValue);
@@ -88,15 +90,34 @@ class KvStorage {
     }
 
     keys (pattern) {
-        if (this.mode === MODE_ASYNC) {
-            return this.client.keysAsync(this.addPrefix(pattern));
-        } else {
-            return this.client.keys(this.addPrefix(pattern));
-        }
+        const method = this.mode === MODE_ASYNC ? 'keysAsync' : 'keys';
+        return this.client[method](this.addPrefix(pattern));
+    }
+
+    subscribe (topic) {
+        const method = this.mode === MODE_ASYNC ? 'subscribeAsync' : 'subscribe';
+        return this.client[method](this.addPrefix(topic));
+    }
+
+    publish (topic, message) {
+        const method = this.mode === MODE_ASYNC ? 'publishAsync' : 'publish';
+        return this.client[method](this.addPrefix(topic), JSON.stringify(message));
+    }
+
+    on (type, callback) {
+        const method = this.mode === MODE_ASYNC ? 'onAsync' : 'on';
+        return this.client[method](
+            type,
+            (topic, message) => callback(this.removePrefix(topic), this.decodeValue(message))
+        );
     }
 
     addPrefix (key) {
         return `${this.prefix}${key}`;
+    }
+
+    removePrefix (key) {
+        return key.substr(this.prefix.length);
     }
 }
 
