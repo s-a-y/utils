@@ -19,4 +19,21 @@ module.exports = {
             }
         })
     }),
+    splitArray: function (source) {
+        return source.consume((err, v, push, next) => {
+            if (err) {
+                push(err);
+                next();
+            }
+            else if (v === _.nil) {
+                push(null, v);
+            }
+            else {
+                v.forEach((v) => {
+                    push(null, v);
+                });
+                next();
+            }
+        })
+    },
 };
