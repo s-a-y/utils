@@ -36,4 +36,22 @@ module.exports = {
             }
         })
     },
+    dotoAsync: _.curry(function (f, source) {
+        return source.consume((err, v, push, next) => {
+            if (err) {
+                push(err);
+                next();
+            }
+            else if (v === _.nil) {
+                push(null, v);
+            }
+            else {
+                f(v)
+                    .then(() => {
+                        push(null, v);
+                        next();
+                    });
+            }
+        })
+    }),
 };
