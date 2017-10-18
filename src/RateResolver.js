@@ -45,11 +45,13 @@ class RateResolver {
                     }
                 }
             })
-            .then(() => this.run())
-            .catch((e) => {
-                this.logger.error('Unexpected error caught', e);
-                throw e;
-            })
+            .then(
+                () => this.run(),
+                (error) => {
+                    this.logger.error('Unexpected error caught', {error});
+                    this.run();
+                }
+            )
     }
 
     isReadyForUpdate (rate) {
