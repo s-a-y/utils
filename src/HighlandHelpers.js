@@ -54,4 +54,24 @@ module.exports = {
             }
         })
     }),
+    filterAsync: _.curry(function (f, source) {
+        return source.consume((err, v, push, next) => {
+            if (err) {
+                push(err);
+                next();
+            }
+            else if (v === _.nil) {
+                push(null, v);
+            }
+            else {
+                f(v)
+                    .then((result) => {
+                        if (result) {
+                            push(null, v);
+                        }
+                        next();
+                    });
+            }
+        })
+    }),
 };
