@@ -25,7 +25,7 @@
     "redis": "^2.8.0",
     "request": "^2.83.0",
     "request-promise": "^4.2.2",
-    "stellar-sdk": "^0.7.3",
+    "stellar-sdk": "^0.8.0",
     "winston": "^2.3.1"
   },
   "devDependencies": {

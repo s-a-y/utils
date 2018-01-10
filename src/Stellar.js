@@ -1,6 +1,8 @@
 'use strict';
 
+const CreateAccountOperation = require('./stellar/CreateAccountOperation');
 const PaymentOperation = require('./stellar/PaymentOperation');
+const AccountMergeOperation = require('./stellar/AccountMergeOperation');
 const ManageOfferOperation = require('./stellar/ManageOfferOperation');
 const StellarSdk = require('stellar-sdk');
 
@@ -69,6 +71,43 @@ class Stellar {
             })
     }
 
+    generateKeyPair () {
+        return this.sdk.Keypair.random();
+    }
+
+    createAccount (
+        {
+            account,
+            accountSecret,
+            destination,
+            startingBalance,
+            memo,
+            memoType,
+        }
+    ) {
+        this.logger.info('createAccount()', arguments);
+        const operation = this.newCreateAccountOperation({account, destination, startingBalance});
+
+        return this.processTransaction({account, accountSecret, memo, memoType}, [operation]);
+
+    }
+
+    accountMerge (
+        {
+            account,
+            accountSecret,
+            destination,
+            memo,
+            memoType,
+        }
+    ) {
+        this.logger.info('accountMerge()', arguments);
+        const operation = this.newAccountMergeOperation({account, destination});
+
+        return this.processTransaction({account, accountSecret, memo, memoType}, [operation]);
+
+    }
+
     sendAssets (
         {
             account,
@@ -133,8 +172,10 @@ class Stellar {
             });
     }
 
-    processTransaction ({account, accountSecret, memo, memoType}, ops) {
+    processTransaction ({account, accountSecret, memo, memoType, extraSecrets=[]}, ops) {
         this.logger.debug('processTransaction()', {context: {args: [{account, accountSecret, memo, memoType}, ops]}});
+
+        if (accountSecret) extraSecrets.push(accountSecret);
 
         return this.server.loadAccount(account)
             .then(accountObject => {
@@ -148,7 +189,8 @@ class Stellar {
                 }
 
                 const transaction = builder.build();
-                transaction.sign(StellarSdk.Keypair.fromSecret(accountSecret));
+
+                extraSecrets.forEach(secret => transaction.sign(StellarSdk.Keypair.fromSecret(secret)));
 
                 return this.server.submitTransaction(transaction)
             })
@@ -164,6 +206,14 @@ class Stellar {
 
     newManageOfferOperation (args) {
         return new ManageOfferOperation(args);
+    }
+
+    newAccountMergeOperation (args) {
+        return new AccountMergeOperation(args);
+    }
+
+    newCreateAccountOperation (args) {
+        return new CreateAccountOperation(args);
     }
 
     operationToStellarObject(operation) {
@@ -190,6 +240,15 @@ class Stellar {
                     amount: operation.amount.toString(),
                     price: operation.price,
                     offerId: operation.offerId,
+                });
+            case operation instanceof AccountMergeOperation:
+                return StellarSdk.Operation.accountMerge({
+                    destination: operation.destination,
+                });
+            case operation instanceof CreateAccountOperation:
+                return StellarSdk.Operation.createAccount({
+                    destination: operation.destination,
+                    startingBalance: operation.startingBalance,
                 });
             default:
                 this.logger.error('Bad operation object', operation);
