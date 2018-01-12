@@ -39,7 +39,10 @@ class RateResolver {
             .then((rate) => {
                 this.logger.debug('rate ' + rate);
                 if (this.isReadyForUpdate(rate)) {
-                    this.logger.info(`Rate changes by more than ${this.triggerBoundaryPcs}%. Initiating offers update.`);
+                    this.logger.info(
+                        `Rate exceeds change limit. Initiating offers update.`,
+                        {rate, limitPcs: this.triggerBoundaryPcs}
+                    );
                     if (this.onUpdateCallback) {
                         return this.onUpdateCallback({rate, pair});
                     }
@@ -56,7 +59,7 @@ class RateResolver {
 
     isReadyForUpdate (rate) {
         const delta = Math.abs(this.currentRate - rate);
-        this.logger.info('Delta: ', delta.toFixed(8));
+        this.logger.debug('Delta: ', delta.toFixed(8));
 
         this.currentRate = rate;
 

@@ -21,6 +21,7 @@
     "bluebird": "^3.5.0",
     "dotenv": "^4.0.0",
     "highland": "^2.11.1",
+    "lodash": "^4.17.4",
     "nonce": "^1.0.4",
     "redis": "^2.8.0",
     "request": "^2.83.0",

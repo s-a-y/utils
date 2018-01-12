@@ -2,6 +2,7 @@
 
 module.exports = {
     Bittrex: require('./src/Bittrex'),
+    CoinMarketCap: require('./src/CoinMarketCap'),
     KvQueue: require('./src/KvQueue'),
     KvStorage: require('./src/KvStorage'),
     Poloniex: require('./src/Poloniex'),

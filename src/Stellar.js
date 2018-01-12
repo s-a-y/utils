@@ -29,6 +29,15 @@ class Stellar {
         );
     }
 
+    streamPayments({account, cursorStorage, messageHandler, streamFromCursor, errorHandler = (error) => this.logger.error("ERROR: effects stream returns error", {error})}) {
+        this.logger.info('Initializing payments streaming...');
+        return this.streamResources(
+            {
+                builder: this.server.payments(),
+            }, arguments[0]
+        );
+    }
+
     streamTransactions({account, cursorStorage, messageHandler, streamFromCursor, errorHandler = (error) => this.logger.error("ERROR: effects stream returns error", {error})}) {
         this.logger.info('Initializing transactions streaming...');
         return this.streamResources(
