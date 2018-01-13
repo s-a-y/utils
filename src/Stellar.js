@@ -5,6 +5,7 @@ const PaymentOperation = require('./stellar/PaymentOperation');
 const AccountMergeOperation = require('./stellar/AccountMergeOperation');
 const ManageOfferOperation = require('./stellar/ManageOfferOperation');
 const StellarSdk = require('stellar-sdk');
+const XdrUtils = require('./stellar/XdrUtils');
 
 class Stellar {
     constructor ({config, logger}) {
@@ -18,6 +19,7 @@ class Stellar {
         this.logger = logger;
         this.server = new StellarSdk.Server(config.horizonUrl);
         this.sdk = StellarSdk;
+        this.xdrUtils = new XdrUtils({logger});
     }
 
     streamEffects({account, cursorStorage, messageHandler, streamFromCursor, errorHandler = (error) => this.logger.error("ERROR: effects stream returns error", {error})}) {
