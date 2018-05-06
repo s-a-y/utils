@@ -4,11 +4,11 @@ const MODE_SYNC = 'sync';
 
 class KvStorage {
     constructor ({config, logger, client}) {
-        this.config = config;
+        this.config = config || {};
         this.client = client;
         this.logger = logger;
-        this.mode = config.mode || MODE_ASYNC;
-        this.prefix = config.env + ':';
+        this.mode = this.config.mode || MODE_ASYNC;
+        this.prefix = this.config.env + ':';
         this.client.on('error', function (error) {
             this.logger.error('KvStorage', error);
         });
@@ -63,9 +63,14 @@ class KvStorage {
         }
     }
 
-    set (key, value) {
+    set (key, value, ...rest) {
         const method = this.mode === MODE_ASYNC ? 'setAsync' : 'set';
-        return this.client[method](this.addPrefix(key), JSON.stringify(value));
+        return this.client[method](this.addPrefix(key), JSON.stringify(value), ...rest);
+    }
+
+    incr (key) {
+        const method = this.mode === MODE_ASYNC ? 'incrAsync' : 'incr';
+        return this.client[method](this.addPrefix(key));
     }
 
     sadd (key, value) {

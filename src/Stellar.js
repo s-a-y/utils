@@ -22,6 +22,15 @@ class Stellar {
         this.xdrUtils = new XdrUtils({logger});
     }
 
+    streamOperations({account, cursorStorage, messageHandler, streamFromCursor, errorHandler = (error) => this.logger.error("ERROR: operations stream returns error", {error})}) {
+        this.logger.info('Initializing operations streaming...');
+        return this.streamResources(
+            {
+                builder: this.server.operations(),
+            }, arguments[0]
+        );
+    }
+
     streamEffects({account, cursorStorage, messageHandler, streamFromCursor, errorHandler = (error) => this.logger.error("ERROR: effects stream returns error", {error})}) {
         this.logger.info('Initializing effects streaming...');
         return this.streamResources(
