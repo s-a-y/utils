@@ -78,6 +78,11 @@ class KvStorage {
         return this.client[method](this.addPrefix(key), value);
     }
 
+    sismember (key, value) {
+        const method = this.mode === MODE_ASYNC ? 'sismemberAsync' : 'sismember';
+        return this.client[method](this.addPrefix(key), value);
+    }
+
     lpush(key, value) {
         const method = this.mode === MODE_ASYNC ? 'lpushAsync' : 'lpush';
         return this.client[method](this.addPrefix(key), JSON.stringify(value))
