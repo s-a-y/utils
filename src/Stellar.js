@@ -2,6 +2,7 @@
 
 const CreateAccountOperation = require('./stellar/CreateAccountOperation');
 const PaymentOperation = require('./stellar/PaymentOperation');
+const PathPaymentOperation = require('./stellar/PathPaymentOperation');
 const AccountMergeOperation = require('./stellar/AccountMergeOperation');
 const ManageOfferOperation = require('./stellar/ManageOfferOperation');
 const StellarSdk = require('stellar-sdk');
@@ -148,6 +149,46 @@ class Stellar {
 
     }
 
+    pathPayment (
+        {
+            account,
+            accountSecret,
+
+            destination,
+            source,
+            path,
+            sendAssetType,
+            sendAssetCode,
+            sendAssetIssuer,
+            destAssetType,
+            destAssetCode,
+            destAssetIssuer,
+            destAmount,
+            sendMax,
+
+            memo,
+            memoType,
+        }
+    ) {
+        this.logger.info('pathPayment()', arguments);
+        const operation = this.newPathPaymentOperation({
+            destination,
+            source,
+            path,
+            sendAssetType,
+            sendAssetCode,
+            sendAssetIssuer,
+            destAssetType,
+            destAssetCode,
+            destAssetIssuer,
+            destAmount,
+            sendMax,
+        });
+
+        return this.processTransaction({account, accountSecret, memo, memoType}, [operation]);
+
+    }
+
     getOffersForAccount (accountId) {
         return this.server.offers('accounts', accountId).call()
             .then((result) => {
@@ -224,6 +265,35 @@ class Stellar {
         return new PaymentOperation({destination, assetType, assetCode, assetIssuer, amount});
     }
 
+
+    newPathPaymentOperation ({
+                        destination,
+                        source,
+                        path,
+                        sendAssetType,
+                        sendAssetCode,
+                        sendAssetIssuer,
+                        destAssetType,
+                        destAssetCode,
+                        destAssetIssuer,
+                        destAmount,
+                        sendMax,
+                    }) {
+        return new PathPaymentOperation({
+            destination,
+            source,
+            path,
+            sendAssetType,
+            sendAssetCode,
+            sendAssetIssuer,
+            destAssetType,
+            destAssetCode,
+            destAssetIssuer,
+            destAmount,
+            sendMax,
+        });
+    }
+
     newManageOfferOperation (args) {
         return new ManageOfferOperation(args);
     }
@@ -247,6 +317,21 @@ class Stellar {
                         destination: operation.destination,
                         amount: operation.amount.toString(),
                     });
+            case operation instanceof PathPaymentOperation:
+                const destAsset = operation.destAssetType === 'native'
+                    ? StellarSdk.Asset.native()
+                    : new StellarSdk.Asset(operation.destAssetCode, operation.destAssetIssuer);
+                const sendAsset = operation.sendAssetType === 'native'
+                    ? StellarSdk.Asset.native()
+                    : new StellarSdk.Asset(operation.sendAssetCode, operation.sendAssetIssuer);
+                return StellarSdk.Operation.pathPayment({
+                    sendAsset,
+                    path: operation.path,
+                    sendMax: operation.sendMax,
+                    destination: operation.destination,
+                    destAmount: operation.destAmount.toString(),
+                    destAsset: destAsset,
+                });
             case operation instanceof ManageOfferOperation:
                 return StellarSdk.Operation.manageOffer({
                     selling:
