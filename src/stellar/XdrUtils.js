@@ -15,7 +15,7 @@ class XdrUtils {
     }
 
     decodeAccountId(account) {
-        return StellarSdk.StrKey.encodeEd25519PublicKey(account.ed25519());
+        return account ? StellarSdk.StrKey.encodeEd25519PublicKey(account.ed25519()) : undefined;
     }
 
     decodeAsset(asset) {
@@ -193,7 +193,7 @@ class XdrUtils {
                     value = account.numSubEntries();
                     break;
                 case 'inflationDest':
-                    value = account.inflationDest();
+                    value = this.decodeAccountId(account.inflationDest());
                     break;
                 case 'flags':
                     value = account.flags();
@@ -202,15 +202,38 @@ class XdrUtils {
                     value = account.homeDomain();
                     break;
                 case 'thresholds':
-                    value = account.thresholds().toString('base64');
+                    value = {};
+                    value.masterWeight = account.thresholds()[0];
+                    value.lowThreshold = account.thresholds()[1];
+                    value.mediumThreshold = account.thresholds()[2];
+                    value.highThreshold = account.thresholds()[3];
                     break;
                 case 'signers':
-                    value = account.signers();
+                    value = account.signers().map((signer) => this.decodeSigner(signer));
                     break;
             }
             result[key] = value;
         });
         return result;
+    }
+
+    decodeSigner(signer) {
+      const result = {};
+      const keyType = _.lowerFirst(signer.key().switch().name.substring(13));
+      switch (keyType) {
+        case 'ed25519':
+          result.key = StellarSdk.StrKey.encodeEd25519PublicKey(signer.key().ed25519());
+          break;
+        case 'preAuthTx':
+          result.key = StellarSdk.StrKey.encodePreAuthTx(signer.key().preAuthTx());
+          break;
+        case 'hashX':
+          result.key = StellarSdk.StrKey.encodeSha256Hash(signer.key().hashX());
+          break;
+      }
+      result.keyType = keyType;
+      result.weight = signer.weight().toString();
+      return result;
     }
 
     decodeTrustLineEntry(trustline) {
