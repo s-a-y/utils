@@ -29,13 +29,18 @@ module.exports = {
                 push(null, v);
             }
             else {
-                v.forEach((v) => {
+                if (Array.isArray(v)) {
+                    v.forEach((item) => {
+                        push(null, item);
+                    });
+                } else {
                     push(null, v);
-                });
+                }
                 next();
             }
         })
     },
+
     dotoAsync: _.curry(function (f, source) {
         return source.consume((err, v, push, next) => {
             if (err) {

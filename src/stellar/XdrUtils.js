@@ -40,6 +40,26 @@ class XdrUtils {
         }
     }
 
+    decodeDatumEntry(data) {
+      const result = {};
+      Object.keys(data._attributes).forEach((key) => {
+        let value;
+        switch (key) {
+          case 'accountId':
+            value = this.decodeAccountId(data.accountId());
+            break;
+          case 'dataName':
+            value = data.dataName().toString();
+            break;
+          case 'dataValue':
+            value = data.dataValue().toString('base64');
+            break;
+        }
+        result[key] = value;
+      });
+      return result;
+    }
+
     decodeOfferEntry(offer) {
         const result = {};
         Object.keys(offer._attributes).forEach((key) => {
@@ -109,6 +129,28 @@ class XdrUtils {
         };
     }
 
+    decodeTransactionResult(transactionResult) {
+      let result;
+      if (transactionResult.result().results()) {
+        result = {results: transactionResult.result().results().map((result) => {
+            switch (result.tr().switch().name) {
+              case 'manageOffer':
+                return this.decodeManageOfferResult(result.tr().manageOfferResult());
+              default:
+                this.logger.warn('Unknown switch name for `tr`. Skip it', {switchName: result.tr().switch().name});
+                return null;
+            }
+          })};
+      } else {
+        result = transactionResult.result().switch().name;
+      }
+      return {
+        result,
+        feeCharged: transactionResult.feeCharged().toString(),
+
+      };
+    }
+
     decodeTransactionMeta(transactionMeta) {
         return {
             operations: transactionMeta.operations().map(o => this.decodeOperationMeta(o)),
@@ -166,6 +208,10 @@ class XdrUtils {
             case 'offer':
                 return {
                     offer: this.decodeOfferEntry(entryData.offer()),
+                };
+            case 'datum':
+                return {
+                    data: this.decodeDatumEntry(entryData.data()),
                 };
             default:
                 this.logger.warn('Unknown switch name for entryData. Skip it', {switchName: entryData.switch().name});

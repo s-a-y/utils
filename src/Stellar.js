@@ -106,7 +106,7 @@ class Stellar {
             memoType,
         }
     ) {
-        this.logger.info('createAccount()', arguments);
+        this.logger.info('createAccount()', arguments[0]);
         const operation = this.newCreateAccountOperation({account, destination, startingBalance});
 
         return this.processTransaction({account, accountSecret, memo, memoType}, [operation]);
@@ -122,7 +122,7 @@ class Stellar {
             memoType,
         }
     ) {
-        this.logger.info('accountMerge()', arguments);
+        this.logger.info('accountMerge()', arguments[0]);
         const operation = this.newAccountMergeOperation({account, destination});
 
         return this.processTransaction({account, accountSecret, memo, memoType}, [operation]);
@@ -142,7 +142,7 @@ class Stellar {
             memoType,
         }
     ) {
-        this.logger.info('sendAsset()', arguments);
+        this.logger.info('sendAsset()', arguments[0]);
         const operation = this.newPaymentOperation({assetType, assetCode, assetIssuer, destination, amount});
 
         return this.processTransaction({account, accountSecret, memo, memoType}, [operation]);
@@ -170,7 +170,7 @@ class Stellar {
             memoType,
         }
     ) {
-        this.logger.info('pathPayment()', arguments);
+        this.logger.info('pathPayment()', arguments[0]);
         const operation = this.newPathPaymentOperation({
             destination,
             source,
