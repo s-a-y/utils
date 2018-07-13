@@ -5,6 +5,7 @@ const PaymentOperation = require('./stellar/PaymentOperation');
 const PathPaymentOperation = require('./stellar/PathPaymentOperation');
 const AccountMergeOperation = require('./stellar/AccountMergeOperation');
 const ManageOfferOperation = require('./stellar/ManageOfferOperation');
+const CreatePassiveOfferOperation = require('./stellar/CreatePassiveOfferOperation');
 const StellarSdk = require('stellar-sdk');
 const XdrUtils = require('./stellar/XdrUtils');
 
@@ -233,6 +234,16 @@ class Stellar {
             });
     }
 
+  createPassiveOffer (args) {
+    this.logger.debug('createPassiveOffer', {context: {args: [args]}});
+    const offers = args.offers.map(v => this.newCreatePassiveOfferOperation(v));
+    return this.processTransaction(args, offers)
+      .catch((error) => {
+        this.logger.error('ERROR: createPassiveOffer()', {error, context: {args}});
+        throw error;
+      });
+  }
+
     processTransaction ({account, accountSecret, memo, memoType, extraSecrets=[]}, ops) {
         this.logger.debug('processTransaction()', {context: {args: [{account, accountSecret, memo, memoType}, ops]}});
 
@@ -298,6 +309,10 @@ class Stellar {
         return new ManageOfferOperation(args);
     }
 
+    newCreatePassiveOfferOperation (args) {
+        return new CreatePassiveOfferOperation(args);
+    }
+
     newAccountMergeOperation (args) {
         return new AccountMergeOperation(args);
     }
@@ -333,7 +348,8 @@ class Stellar {
                     destAsset: destAsset,
                 });
             case operation instanceof ManageOfferOperation:
-                return StellarSdk.Operation.manageOffer({
+            case operation instanceof CreatePassiveOfferOperation:
+                const args = {
                     selling:
                         operation.sellingAssetType === 'native'
                             ? StellarSdk.Asset.native()
@@ -345,7 +361,10 @@ class Stellar {
                     amount: operation.amount.toString(),
                     price: operation.price,
                     offerId: operation.offerId,
-                });
+                };
+                return operation instanceof ManageOfferOperation
+                  ? StellarSdk.Operation.manageOffer(args)
+                  : StellarSdk.Operation.createPassiveOffer(args);
             case operation instanceof AccountMergeOperation:
                 return StellarSdk.Operation.accountMerge({
                     destination: operation.destination,
