@@ -24,6 +24,15 @@ class Stellar {
         this.xdrUtils = new XdrUtils({logger});
     }
 
+    streamTrades({account, cursorStorage, messageHandler, streamFromCursor, errorHandler = (error) => this.logger.error("ERROR: operations stream returns error", {error})}) {
+        this.logger.info('Initializing trades streaming...');
+        return this.streamResources(
+            {
+                builder: this.server.trades(),
+            }, arguments[0]
+        );
+    }
+
     streamOperations({account, cursorStorage, messageHandler, streamFromCursor, errorHandler = (error) => this.logger.error("ERROR: operations stream returns error", {error})}) {
         this.logger.info('Initializing operations streaming...');
         return this.streamResources(
@@ -62,15 +71,17 @@ class Stellar {
 
     streamResources ({builder}, {account, cursorStorage, messageHandler = () => {}, streamFromCursor, errorHandler = (error) => this.logger.error("Stellar stream returns error", {error})}) {
         this.logger.info('Calling cursor storage..');
-        return cursorStorage.get()
-            .then((value) => {
-                this.logger.info(`...stored cursor available: ${value}`);
+        return (cursorStorage ? cursorStorage.get() : Promise.resolve(streamFromCursor))
+            .then((cursor) => {
+                this.logger.info(`...stored cursor available: ${cursor}`);
                 this.logger.info('Waiting for new message..');
+                builder.order('asc');
+                builder.limit(200);
                 if (account) {
                     builder.forAccount(account);
                 }
                 const close = builder
-                    .cursor(streamFromCursor ? streamFromCursor : (value ? value : 'now'))
+                    .cursor(cursor)
                     .stream({
                         onmessage: (message) => {
                             this.logger.info('..new message received');
@@ -79,9 +90,9 @@ class Stellar {
                         onerror: (event) => {
                             this.logger.error('Stream returns error event', {
                                 context: {
+                                    cursor,
                                     event,
                                     account,
-                                    cursor: value
                                 }
                             });
                             const error = new Error('Stellar stream returns error event');
