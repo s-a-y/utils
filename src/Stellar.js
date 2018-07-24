@@ -24,7 +24,7 @@ class Stellar {
         this.xdrUtils = new XdrUtils({logger});
     }
 
-    streamTrades({account, cursorStorage, messageHandler, streamFromCursor, errorHandler = (error) => this.logger.error("ERROR: operations stream returns error", {error})}) {
+    streamTrades({account, cursorStorage, messageHandler, cursor, errorHandler = (error) => this.logger.error("ERROR: operations stream returns error", {error})}) {
         this.logger.info('Initializing trades streaming...');
         return this.streamResources(
             {
@@ -33,7 +33,7 @@ class Stellar {
         );
     }
 
-    streamOperations({account, cursorStorage, messageHandler, streamFromCursor, errorHandler = (error) => this.logger.error("ERROR: operations stream returns error", {error})}) {
+    streamOperations({account, cursorStorage, messageHandler, cursor, errorHandler = (error) => this.logger.error("ERROR: operations stream returns error", {error})}) {
         this.logger.info('Initializing operations streaming...');
         return this.streamResources(
             {
@@ -42,7 +42,7 @@ class Stellar {
         );
     }
 
-    streamEffects({account, cursorStorage, messageHandler, streamFromCursor, errorHandler = (error) => this.logger.error("ERROR: effects stream returns error", {error})}) {
+    streamEffects({account, cursorStorage, messageHandler, cursor, errorHandler = (error) => this.logger.error("ERROR: effects stream returns error", {error})}) {
         this.logger.info('Initializing effects streaming...');
         return this.streamResources(
             {
@@ -51,7 +51,7 @@ class Stellar {
         );
     }
 
-    streamPayments({account, cursorStorage, messageHandler, streamFromCursor, errorHandler = (error) => this.logger.error("ERROR: effects stream returns error", {error})}) {
+    streamPayments({account, cursorStorage, messageHandler, cursor, errorHandler = (error) => this.logger.error("ERROR: effects stream returns error", {error})}) {
         this.logger.info('Initializing payments streaming...');
         return this.streamResources(
             {
@@ -60,7 +60,7 @@ class Stellar {
         );
     }
 
-    streamTransactions({account, cursorStorage, messageHandler, streamFromCursor, errorHandler = (error) => this.logger.error("ERROR: effects stream returns error", {error})}) {
+    streamTransactions({account, cursorStorage, messageHandler, cursor, errorHandler = (error) => this.logger.error("ERROR: effects stream returns error", {error})}) {
         this.logger.info('Initializing transactions streaming...');
         return this.streamResources(
             {
@@ -69,14 +69,27 @@ class Stellar {
         );
     }
 
-    streamResources ({builder}, {account, cursorStorage, messageHandler = () => {}, streamFromCursor, errorHandler = (error) => this.logger.error("Stellar stream returns error", {error})}) {
+    streamResources (
+      {builder},
+      {
+        account,
+        cursorStorage,
+        messageHandler = () => {},
+        cursor,
+        streamFromCursor, // for backward compatibility
+        order = 'asc',
+        limit = 200,
+        errorHandler = (error) => this.logger.error("Stellar stream returns error", {error})
+      }
+    ) {
+        cursor = cursor || streamFromCursor;
         this.logger.info('Calling cursor storage..');
-        return (cursorStorage ? cursorStorage.get() : Promise.resolve(streamFromCursor))
+        return (cursorStorage ? cursorStorage.get() : Promise.resolve(cursor))
             .then((cursor) => {
                 this.logger.info(`...stored cursor available: ${cursor}`);
                 this.logger.info('Waiting for new message..');
-                builder.order('asc');
-                builder.limit(200);
+                builder.order(order);
+                builder.limit(limit);
                 if (account) {
                     builder.forAccount(account);
                 }
