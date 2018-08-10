@@ -153,7 +153,7 @@ class XdrUtils {
 
     decodeTransactionMeta(transactionMeta) {
         return {
-            operations: transactionMeta.operations().map(o => this.decodeOperationMeta(o)),
+            operations: transactionMeta.v1().operations().map(o => this.decodeOperationMeta(o)),
         };
     }
 
