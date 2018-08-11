@@ -152,8 +152,9 @@ class XdrUtils {
     }
 
     decodeTransactionMeta(transactionMeta) {
+        transactionMeta = transactionMeta.arm() === 'v1' ? transactionMeta.v1() : transactionMeta;
         return {
-            operations: transactionMeta.v1().operations().map(o => this.decodeOperationMeta(o)),
+            operations: transactionMeta.operations().map(o => this.decodeOperationMeta(o)),
         };
     }
 
