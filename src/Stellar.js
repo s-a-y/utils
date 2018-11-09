@@ -17,6 +17,8 @@ class Stellar {
             StellarSdk.Network.usePublicNetwork();
         }
 
+        StellarSdk.Config.setAllowHttp(config.allowHttp || false);
+
         this.config = config;
         this.logger = logger;
         this.server = new StellarSdk.Server(config.horizonUrl);
@@ -280,8 +282,18 @@ class Stellar {
                 ops.forEach(operation => builder.addOperation(this.operationToStellarObject(operation)));
 
                 if (memo) {
-                    const memoObject = memoType === 'id' ? StellarSdk.Memo.id(memo) : StellarSdk.Memo.text(memo);
-                    builder.addMemo(memoObject)
+                    switch (memoType) {
+                      case 'id':
+                        builder.addMemo(StellarSdk.Memo.id(memo));
+                        break;
+                      case 'hash':
+                        builder.addMemo(StellarSdk.Memo.hash(memo));
+                        break;
+                      case 'text':
+                      default:
+                        builder.addMemo(StellarSdk.Memo.text(memo));
+                        break;
+                    }
                 }
 
                 const transaction = builder.build();
