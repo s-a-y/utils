@@ -17,7 +17,7 @@ class Stellar {
             StellarSdk.Network.usePublicNetwork();
         }
 
-        StellarSdk.Config.setAllowHttp(config.allowHttp || false);
+        StellarSdk.Config.setAllowHttp(!config.horizonUrl.match(/^https:/));
 
         this.config = config;
         this.logger = logger;
