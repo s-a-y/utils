@@ -9,7 +9,7 @@ class KvStorage {
         this.logger = logger;
         this.mode = this.config.mode || MODE_ASYNC;
         this.prefix = this.config.env + ':';
-        this.client.on('error', function (error) {
+        this.client.on('error', (error) => {
             this.logger.error('KvStorage', error);
         });
     }
